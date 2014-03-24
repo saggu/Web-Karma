@@ -25,8 +25,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import net.sf.json.JSONArray;
 import edu.isi.karma.controller.update.WorksheetListUpdate;
+import edu.isi.karma.rep.HNode;
 import edu.isi.karma.rep.HNodePath;
+import edu.isi.karma.rep.HTable;
 import edu.isi.karma.rep.Table;
 import edu.isi.karma.rep.TablePager;
 import edu.isi.karma.rep.Worksheet;
@@ -59,6 +62,9 @@ public class VWorksheet extends ViewEntity {
 	
 	private final List<HNodePath> columns;
 
+	private HTable headers;
+	private HashMap<String, HTable> headerMap;
+	
 	/**
 	 * The maximum number of rows to show in the nested tables.
 	 */
@@ -75,6 +81,7 @@ public class VWorksheet extends ViewEntity {
 			VWorkspace vWorkspace) {
 		super(id);
 		this.worksheet = worksheet;
+		this.headers = worksheet.getHeaders();
 		this.columns = columns;
 		this.maxRowsToShowInNestedTables = vWorkspace.getPreferences()
 				.getIntViewPreferenceValue(
@@ -84,8 +91,20 @@ public class VWorksheet extends ViewEntity {
 		getTablePager(worksheet.getDataTable(),
 				vWorkspace.getPreferences().getIntViewPreferenceValue(
 						ViewPreference.defaultRowsToShowInTopTables));
+		
+		this.headerMap = new HashMap<String, HTable>();
+		createHTableMap(headers);
 	}
 
+	private void createHTableMap(HTable table) {
+		headerMap.put(table.getId(), table);
+		for(HNode node : table.getHNodes()) {
+			if(node.hasNestedTable()) {
+				createHTableMap(node.getNestedTable());
+			}
+		}
+	}
+	
 	private TablePager getTablePager(Table table, int size) {
 		TablePager tp = tableId2TablePager.get(table.getId());
 		if (tp != null) {
@@ -153,6 +172,18 @@ public class VWorksheet extends ViewEntity {
 
 	public List<HNodePath> getColumns() {
 		return columns;
+	}
+	
+	public HTable getHeaders() {
+		return this.headers;
+	}
+	
+	public HTable getHeaderTable(String htableId) {
+		return this.headerMap.get(htableId);
+	}
+	
+	public void organizeColumn(JSONArray columns) {
+		
 	}
 	
 	public void generateWorksheetListJson(String prefix, PrintWriter pw) {

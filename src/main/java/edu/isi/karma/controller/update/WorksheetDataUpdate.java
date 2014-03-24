@@ -32,7 +32,6 @@ import org.slf4j.LoggerFactory;
 
 import edu.isi.karma.rep.HTable;
 import edu.isi.karma.rep.Node;
-import edu.isi.karma.rep.RepFactory;
 import edu.isi.karma.rep.Row;
 import edu.isi.karma.rep.Table;
 import edu.isi.karma.rep.TablePager;
@@ -70,7 +69,7 @@ public class WorksheetDataUpdate extends AbstractUpdate {
 			Table dataTable = wk.getDataTable();
 			TablePager pager = vWorksheet.getTopTablePager();
 			
-			JSONArray rows = getRowsUsingPager(dataTable, vWorkspace.getRepFactory(), 
+			JSONArray rows = getRowsUsingPager(
 					pager, vWorksheet, vWorkspace.getPreferences().getIntViewPreferenceValue(
 							ViewPreference.maxCharactersInCell));
 			int rowsLeft = dataTable.getNumRows() - rows.length();
@@ -86,12 +85,11 @@ public class WorksheetDataUpdate extends AbstractUpdate {
 		}
 	}
 
-	private JSONArray getRowsUsingPager(Table dataTable, RepFactory repFactory, 
-			TablePager pager, VWorksheet vWorksheet, int maxDataDisplayLength) throws JSONException {
-		return getRowsJsonArray(pager.getRows(), vWorksheet, repFactory, maxDataDisplayLength);
+	private JSONArray getRowsUsingPager(TablePager pager, VWorksheet vWorksheet, int maxDataDisplayLength) throws JSONException {
+		return getRowsJsonArray(pager.getRows(), vWorksheet, maxDataDisplayLength);
 	}
 	
-	public JSONArray getRowsJsonArray(List<Row> rows, VWorksheet vWorksheet, RepFactory repFactory,
+	public JSONArray getRowsJsonArray(List<Row> rows, VWorksheet vWorksheet, 
 			int maxDataDisplayLength) throws JSONException {
 		JSONArray rowsArr = new JSONArray();
 		
@@ -103,7 +101,7 @@ public class WorksheetDataUpdate extends AbstractUpdate {
 			// Get the HTable so that we get the values in the correct order of columns
 			if (hTable == null) {
 				String hTableId = row.getBelongsToTable().getHTableId();
-				hTable = repFactory.getHTable(hTableId);
+				hTable = vWorksheet.getHeaderTable(hTableId);
 				if (hTable == null) {
 					logger.error("No HTable found for a row. This should not happen!");
 					continue;
@@ -121,7 +119,7 @@ public class WorksheetDataUpdate extends AbstractUpdate {
 				if (node.hasNestedTable()) {
 					nodeObj.put(JsonKeys.hasNestedTable.name(), true);
 					Table nestedTable = node.getNestedTable();
-					JSONArray nestedTableRows = getRowsUsingPager(nestedTable, repFactory, 
+					JSONArray nestedTableRows = getRowsUsingPager( 
 							vWorksheet.getNestedTablePager(nestedTable), vWorksheet, 
 							maxDataDisplayLength);
 					nodeObj.put(JsonKeys.nestedRows.name(), nestedTableRows);

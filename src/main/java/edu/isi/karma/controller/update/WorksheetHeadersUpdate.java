@@ -61,7 +61,7 @@ public class WorksheetHeadersUpdate extends AbstractUpdate {
 			
 			Worksheet wk = vWorksheet.getWorksheet();
 			ColumnMetadata colMeta = wk.getMetadataContainer().getColumnMetadata();
-			HTable headers = wk.getHeaders();
+			HTable headers = vWorksheet.getHeaders();
 			
 			JSONArray columns = getColumnsJsonArray(headers, colMeta);
 			response.put(JsonKeys.columns.name(), columns);

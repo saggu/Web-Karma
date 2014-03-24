@@ -167,6 +167,8 @@ import edu.isi.karma.controller.command.worksheet.LoadAdditionalWorksheetRowsCom
 import edu.isi.karma.controller.command.worksheet.LoadAdditionalWorksheetRowsCommandFactory;
 import edu.isi.karma.controller.command.worksheet.MultipleValueEditColumnCommand;
 import edu.isi.karma.controller.command.worksheet.MultipleValueEditColumnCommandFactory;
+import edu.isi.karma.controller.command.worksheet.OrganizeColumnsCommand;
+import edu.isi.karma.controller.command.worksheet.OrganizeColumnsCommandFactory;
 import edu.isi.karma.controller.command.worksheet.RefreshSVGAligmentCommandFactory;
 import edu.isi.karma.controller.command.worksheet.RefreshSVGAlignmentCommand;
 import edu.isi.karma.controller.command.worksheet.RenameColumnCommand;
@@ -346,6 +348,8 @@ public class ExecutionController {
         		new RefreshSVGAligmentCommandFactory());
         commandFactoryMap.put(DeleteWorksheetCommand.class.getSimpleName(), 
         		new DeleteWorksheetCommandFactory());
+        commandFactoryMap.put(OrganizeColumnsCommand.class.getSimpleName(), 
+        		new OrganizeColumnsCommandFactory());
     }
 
     public Workspace getWorkspace() {
