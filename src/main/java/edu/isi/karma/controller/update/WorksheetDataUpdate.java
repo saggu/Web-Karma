@@ -36,6 +36,7 @@ import edu.isi.karma.rep.Row;
 import edu.isi.karma.rep.Table;
 import edu.isi.karma.rep.TablePager;
 import edu.isi.karma.rep.Worksheet;
+import edu.isi.karma.view.VHNode;
 import edu.isi.karma.view.VWorksheet;
 import edu.isi.karma.view.VWorkspace;
 import edu.isi.karma.view.ViewPreferences.ViewPreference;
@@ -93,44 +94,46 @@ public class WorksheetDataUpdate extends AbstractUpdate {
 			int maxDataDisplayLength) throws JSONException {
 		JSONArray rowsArr = new JSONArray();
 		
-		HTable hTable = null;
-		List<String> orderedHnodeIds = null;
+//		HTable hTable = null;
+		List<VHNode> orderedHnodeIds = null;
 		for (Row row:rows) {
 			JSONArray rowValueArray = new JSONArray();
 			
 			// Get the HTable so that we get the values in the correct order of columns
-			if (hTable == null) {
+			if (orderedHnodeIds == null) {
 				String hTableId = row.getBelongsToTable().getHTableId();
-				hTable = vWorksheet.getHeaderTable(hTableId);
-				if (hTable == null) {
+//				hTable = vWorksheet.getHeaderTable(hTableId);
+				
+				orderedHnodeIds = vWorksheet.getHeaderViewNodes(hTableId);
+				if (orderedHnodeIds == null) {
 					logger.error("No HTable found for a row. This should not happen!");
 					continue;
 				}
-				orderedHnodeIds = hTable.getOrderedNodeIds();
+//				orderedHnodeIds = hTable.getOrderedNodeIds();
 			}
 			
-			for (String hNodeId : orderedHnodeIds) {
-				Node node = row.getNode(hNodeId);
+			for (VHNode vNode : orderedHnodeIds) {
+				Node rowNode = row.getNode(vNode.getId());
 				JSONObject nodeObj = new JSONObject();
 				nodeObj.put(JsonKeys.columnClass.name(), 
-						WorksheetHeadersUpdate.getColumnClass(hNodeId));
-				nodeObj.put(JsonKeys.nodeId.name(), node.getId());
+						WorksheetHeadersUpdate.getColumnClass(vNode.getId()));
+				nodeObj.put(JsonKeys.nodeId.name(), rowNode.getId());
 				nodeObj.put(JsonKeys.rowID.name(), row.getId());
-				if (node.hasNestedTable()) {
+				if (vNode.hasNestedTable()) {
 					nodeObj.put(JsonKeys.hasNestedTable.name(), true);
-					Table nestedTable = node.getNestedTable();
+					Table nestedTable = rowNode.getNestedTable();
 					JSONArray nestedTableRows = getRowsUsingPager( 
 							vWorksheet.getNestedTablePager(nestedTable), vWorksheet, 
 							maxDataDisplayLength);
 					nodeObj.put(JsonKeys.nestedRows.name(), nestedTableRows);
-					nodeObj.put(JsonKeys.tableId.name(), node.getNestedTable().getId());
+					nodeObj.put(JsonKeys.tableId.name(), rowNode.getNestedTable().getId());
 					
 					int rowsLeft = nestedTable.getNumRows() - nestedTableRows.length();
 					rowsLeft = rowsLeft < 0 ? 0 : rowsLeft;
 					nodeObj.put(JsonKeys.additionalRowsCount.name(), rowsLeft);
 					
 				} else {
-					String nodeVal = node.getValue().asString();
+					String nodeVal = rowNode.getValue().asString();
 					nodeVal = (nodeVal == null) ? "" : nodeVal;
 					String displayVal = (nodeVal.length() > maxDataDisplayLength) 
 							? nodeVal.substring(0, maxDataDisplayLength) + "..." : nodeVal;

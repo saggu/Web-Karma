@@ -29,7 +29,7 @@ public class OrganizeColumnsCommandFactory extends CommandFactory implements
 				Arguments.orderedColumns.name(), inputJson);
 
 		OrganizeColumnsCommand cmd = new OrganizeColumnsCommand(
-				getNewId(workspace), worksheetId, orderedColumns);
+				getNewId(workspace), workspace.getId(), worksheetId, orderedColumns);
 		cmd.setInputParameterJson(inputJson.toString());
 		return cmd;
 	}

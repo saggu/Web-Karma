@@ -32,6 +32,7 @@ import edu.isi.karma.rep.ColumnMetadata;
 import edu.isi.karma.rep.HNode;
 import edu.isi.karma.rep.HTable;
 import edu.isi.karma.rep.Worksheet;
+import edu.isi.karma.view.VHNode;
 import edu.isi.karma.view.VWorksheet;
 import edu.isi.karma.view.VWorkspace;
 
@@ -61,9 +62,9 @@ public class WorksheetHeadersUpdate extends AbstractUpdate {
 			
 			Worksheet wk = vWorksheet.getWorksheet();
 			ColumnMetadata colMeta = wk.getMetadataContainer().getColumnMetadata();
-			HTable headers = vWorksheet.getHeaders();
+			List<VHNode> viewHeaders = vWorksheet.getHeaderViewNodes();
 			
-			JSONArray columns = getColumnsJsonArray(headers, colMeta);
+			JSONArray columns = getColumnsJsonArray(viewHeaders, colMeta, vWorksheet);
 			response.put(JsonKeys.columns.name(), columns);
 			
 			pw.println(response.toString());
@@ -72,18 +73,17 @@ public class WorksheetHeadersUpdate extends AbstractUpdate {
 		}
 	}
 
-	private JSONArray getColumnsJsonArray(HTable headers, ColumnMetadata colMeta) throws JSONException {
+	private JSONArray getColumnsJsonArray(List<VHNode> viewHeaders, ColumnMetadata colMeta, VWorksheet viewWorksheet) throws JSONException {
 		JSONArray colArr = new JSONArray();
 		
-		List<HNode> hNodes = headers.getSortedHNodes();
-		for (HNode hNode:hNodes) {
-			colArr.put(getColumnJsonObject(hNode, colMeta));
+		for (VHNode hNode:viewHeaders) {
+			colArr.put(getColumnJsonObject(hNode, colMeta, viewWorksheet));
 		}
 		
 		return colArr;
 	}
 	
-	private JSONObject getColumnJsonObject(HNode hNode, ColumnMetadata colMeta) throws JSONException {
+	private JSONObject getColumnJsonObject(VHNode hNode, ColumnMetadata colMeta, VWorksheet viewWorksheet) throws JSONException {
 		JSONObject hNodeObj = new JSONObject();
 		String columnName = hNode.getColumnName();
 		
@@ -100,8 +100,8 @@ public class WorksheetHeadersUpdate extends AbstractUpdate {
 		if (hNode.hasNestedTable()) {
 			hNodeObj.put(JsonKeys.hasNestedTable.name(), true);
 			
-			HTable nestedTable = hNode.getNestedTable();
-			hNodeObj.put(JsonKeys.columns.name(), getColumnsJsonArray(nestedTable, colMeta));
+			List<VHNode> nestedHeaders = hNode.getNestedNodes();
+			hNodeObj.put(JsonKeys.columns.name(), getColumnsJsonArray(nestedHeaders, colMeta, viewWorksheet));
 		} else {
 			hNodeObj.put(JsonKeys.hasNestedTable.name(), false);
 		}

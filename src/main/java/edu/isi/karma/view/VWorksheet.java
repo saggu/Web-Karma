@@ -21,11 +21,13 @@
 package edu.isi.karma.view;
 
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
 import edu.isi.karma.controller.update.WorksheetListUpdate;
 import edu.isi.karma.rep.HNode;
 import edu.isi.karma.rep.HNodePath;
@@ -62,9 +64,8 @@ public class VWorksheet extends ViewEntity {
 	
 	private final List<HNodePath> columns;
 
-	private HTable headers;
-	private HashMap<String, HTable> headerMap;
-	
+	private ArrayList<VHNode> headerViewNodes;
+	private HashMap<String, ArrayList<VHNode>> htableHeaderViewMap;
 	/**
 	 * The maximum number of rows to show in the nested tables.
 	 */
@@ -81,7 +82,6 @@ public class VWorksheet extends ViewEntity {
 			VWorkspace vWorkspace) {
 		super(id);
 		this.worksheet = worksheet;
-		this.headers = worksheet.getHeaders();
 		this.columns = columns;
 		this.maxRowsToShowInNestedTables = vWorkspace.getPreferences()
 				.getIntViewPreferenceValue(
@@ -92,18 +92,29 @@ public class VWorksheet extends ViewEntity {
 				vWorkspace.getPreferences().getIntViewPreferenceValue(
 						ViewPreference.defaultRowsToShowInTopTables));
 		
-		this.headerMap = new HashMap<String, HTable>();
-		createHTableMap(headers);
+		this.htableHeaderViewMap = new HashMap<String, ArrayList<VHNode>>();
+		this.headerViewNodes = initHeaderViewNodes(worksheet.getHeaders());
+		this.htableHeaderViewMap.put(worksheet.getHeaders().getId(), this.headerViewNodes);
 	}
 
-	private void createHTableMap(HTable table) {
-		headerMap.put(table.getId(), table);
-		for(HNode node : table.getHNodes()) {
+	private ArrayList<VHNode> initHeaderViewNodes(HTable table) {
+		ArrayList<VHNode> vNodes = new ArrayList<>();
+		for(String hNodeId : table.getOrderedNodeIds()) {
+			HNode node = table.getHNode(hNodeId);
+			VHNode vNode = new VHNode(node.getId(), node.getColumnName());
 			if(node.hasNestedTable()) {
-				createHTableMap(node.getNestedTable());
+				HTable nestedTable = node.getNestedTable();
+				ArrayList<VHNode> nestedNodes = initHeaderViewNodes(nestedTable);
+				for(VHNode nestedVNode : nestedNodes) {
+					vNode.addNestedNode(nestedVNode);
+				}
+				this.htableHeaderViewMap.put(nestedTable.getId(), vNode.getNestedNodes());
 			}
+			vNodes.add(vNode);
 		}
+		return vNodes;
 	}
+	
 	
 	private TablePager getTablePager(Table table, int size) {
 		TablePager tp = tableId2TablePager.get(table.getId());
@@ -174,16 +185,45 @@ public class VWorksheet extends ViewEntity {
 		return columns;
 	}
 	
-	public HTable getHeaders() {
-		return this.headers;
+	public List<VHNode> getHeaderViewNodes() {
+		return this.headerViewNodes;
 	}
 	
-	public HTable getHeaderTable(String htableId) {
-		return this.headerMap.get(htableId);
+	public List<VHNode> getHeaderViewNodes(String htableId) {
+		return this.htableHeaderViewMap.get(htableId);
 	}
 	
 	public void organizeColumn(JSONArray columns) {
-		
+//		ArrayList<HNode> newHeaders = new ArrayList<HNode>();
+//		
+//		for(Object columnObj : columns) {
+//			JSONObject column = (JSONObject)columnObj;
+//			if(column.getBoolean("visible") == true) {
+//				newHeaders.add(this.headers.getHNode(column.getString("id")));
+//				Object nestedColumns = column.get("nestedColumns");
+//				if(nestedColumns != null && nestedColumns instanceof JSONArray) {
+//					
+//				}
+//			}
+//		}
+	}
+	
+	private ArrayList<HNode> generateOrganizedColumns(JSONArray columns) {
+		ArrayList<HNode> newHeaders = new ArrayList<HNode>();
+//		
+//		for(Object columnObj : columns) {
+//			JSONObject column = (JSONObject)columnObj;
+//			if(column.getBoolean("visible") == true) {
+//				HNode node = this.headers.getHNode(column.getString("id"));
+//				newHeaders.add(node);
+//				Object nestedColumns = column.get("nestedColumns");
+//				if(nestedColumns != null && nestedColumns instanceof JSONArray) {
+//					ArrayList<HNode> nestedHeaders = generateOrganizedColumns((JSONArray)nestedColumns);
+//					node.
+//				}
+//			}
+//		}
+		return newHeaders;
 	}
 	
 	public void generateWorksheetListJson(String prefix, PrintWriter pw) {
