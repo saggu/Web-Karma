@@ -1,6 +1,6 @@
 package edu.isi.karma.controller.command.worksheet;
 
-import  org.json.JSONArray;
+import org.json.JSONArray;
 
 import edu.isi.karma.controller.command.CommandException;
 import edu.isi.karma.controller.command.CommandType;
@@ -8,8 +8,6 @@ import edu.isi.karma.controller.command.WorksheetCommand;
 import edu.isi.karma.controller.update.UpdateContainer;
 import edu.isi.karma.controller.update.WorksheetUpdateFactory;
 import edu.isi.karma.rep.Workspace;
-import edu.isi.karma.view.VWorksheet;
-import edu.isi.karma.view.VWorkspace;
 
 
 public class OrganizeColumnsCommand extends WorksheetCommand {
@@ -46,7 +44,7 @@ public class OrganizeColumnsCommand extends WorksheetCommand {
 
 	@Override
 	public UpdateContainer doIt(Workspace workspace) throws CommandException {
-		//Calculate the prevOrderColumns
+		//Calculate the prevOrderColum2ns
 		
 		orderColumns(orderedColumns);
 		

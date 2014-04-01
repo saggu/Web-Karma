@@ -194,6 +194,15 @@ public class VWorksheet extends ViewEntity {
 		return this.htableHeaderViewMap.get(htableId);
 	}
 	
+	public boolean isHeaderNodeVisible(String htableId, String hnodeId) {
+		List<VHNode> nodes = getHeaderViewNodes(htableId);
+		for(VHNode node : nodes) {
+			if(node.getId().equals(hnodeId))
+				return true;
+		}
+		return false;
+	}
+	
 	public void organizeColumn(JSONArray columns) {
 //		ArrayList<HNode> newHeaders = new ArrayList<HNode>();
 //		

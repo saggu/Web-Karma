@@ -21,19 +21,18 @@
 
 package edu.isi.karma.controller.update;
 
-import edu.isi.karma.rep.ColumnMetadata;
-import edu.isi.karma.rep.HNode;
-import edu.isi.karma.rep.HTable;
-import edu.isi.karma.rep.Worksheet;
-import edu.isi.karma.view.VHNode;
-import edu.isi.karma.view.VWorksheet;
-import edu.isi.karma.view.VWorkspace;
+import java.io.PrintWriter;
+import java.util.List;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.PrintWriter;
-import java.util.List;
+import edu.isi.karma.rep.ColumnMetadata;
+import edu.isi.karma.rep.Worksheet;
+import edu.isi.karma.view.VHNode;
+import edu.isi.karma.view.VWorksheet;
+import edu.isi.karma.view.VWorkspace;
 
 public class WorksheetHeadersUpdate extends AbstractUpdate {
 

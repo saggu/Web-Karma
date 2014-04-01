@@ -43,6 +43,7 @@ and related projects, please see: http://www.isi.edu/integration
         <link rel="stylesheet" type="text/css" href="./uiLibs/jquery/css/jquery.fileupload.css" />
         <link rel="stylesheet" type="text/css" href="./uiLibs/jquery/css/jquery.fileupload-ui.css" />
         <link rel="stylesheet" type="text/css" href="./uiLibs/jquery/css/jquery.qtip.min.css" />
+        <link rel="stylesheet" type="text/css" href="./uiLibs/jquery/css/nestable.css" />
         <link rel="stylesheet" type="text/css" href="./uiLibs/sticky/css/sticky.min.css" />
         <link rel="stylesheet/less" type="text/css" href="./uiLibs/less/css/styles-03d-fixed-pixel.less" />
         
@@ -246,6 +247,7 @@ and related projects, please see: http://www.isi.edu/integration
         <!-- Third Party JavaScript files		 -->
         <script type="text/javascript" src="uiLibs/jquery/js/jquery-1.10.2.min.js"></script>
         <script type="text/javascript" src="uiLibs/jquery/js/jquery-ui-1.10.3.custom.min.js"></script>
+        <script type="text/javascript" src="uiLibs/jquery/js/nestable.js"></script>
 		<script type="text/javascript" src="uiLibs/twitterBootstrap/js/bootstrap.min.js"></script>
 		<script type="text/javascript" src="uiLibs/twitterBootstrap/js/bootstrap3-typeahead.min.js"></script>
 		<script type="text/javascript" src="uiLibs/bootstrap3-editable/js/bootstrap-editable.min.js"></script>
