@@ -62,7 +62,7 @@ public class WorksheetHeadersUpdate extends AbstractUpdate {
 			ColumnMetadata colMeta = wk.getMetadataContainer().getColumnMetadata();
 			List<VHNode> viewHeaders = vWorksheet.getHeaderViewNodes();
 			
-			JSONArray columns = getColumnsJsonArray(viewHeaders, colMeta, vWorksheet);
+			JSONArray columns = getColumnsJsonArray(viewHeaders, colMeta);
 			response.put(JsonKeys.columns.name(), columns);
 			
 			pw.println(response.toString());
@@ -71,17 +71,19 @@ public class WorksheetHeadersUpdate extends AbstractUpdate {
 		}
 	}
 
-	private JSONArray getColumnsJsonArray(List<VHNode> viewHeaders, ColumnMetadata colMeta, VWorksheet viewWorksheet) throws JSONException {
+	private JSONArray getColumnsJsonArray(List<VHNode> viewHeaders, ColumnMetadata colMeta) throws JSONException {
 		JSONArray colArr = new JSONArray();
 		
 		for (VHNode hNode:viewHeaders) {
-			colArr.put(getColumnJsonObject(hNode, colMeta, viewWorksheet));
+			if(hNode.isVisible()) {
+				colArr.put(getColumnJsonObject(hNode, colMeta));
+			}
 		}
 		
 		return colArr;
 	}
 	
-	private JSONObject getColumnJsonObject(VHNode hNode, ColumnMetadata colMeta, VWorksheet viewWorksheet) throws JSONException {
+	private JSONObject getColumnJsonObject(VHNode hNode, ColumnMetadata colMeta) throws JSONException {
 		JSONObject hNodeObj = new JSONObject();
 		String columnName = hNode.getColumnName();
 		
@@ -99,7 +101,7 @@ public class WorksheetHeadersUpdate extends AbstractUpdate {
 			hNodeObj.put(JsonKeys.hasNestedTable.name(), true);
 			
 			List<VHNode> nestedHeaders = hNode.getNestedNodes();
-			hNodeObj.put(JsonKeys.columns.name(), getColumnsJsonArray(nestedHeaders, colMeta, viewWorksheet));
+			hNodeObj.put(JsonKeys.columns.name(), getColumnsJsonArray(nestedHeaders, colMeta));
 		} else {
 			hNodeObj.put(JsonKeys.hasNestedTable.name(), false);
 		}

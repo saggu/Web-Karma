@@ -926,7 +926,7 @@ var OrganizeColumnsDialog = (function() {
 				var div = $("<div>").addClass("dd-handle").append(eyeOuter).append(element.name);
 				
 				if(!element.hideable) {
-					div.css("color", "#DDDDDD");
+					eye.css("color", "#DDDDDD");
 					eye.addClass("glyphicon-noclick");
 				}
 				
@@ -945,11 +945,38 @@ var OrganizeColumnsDialog = (function() {
         	console.log("Save clicked");
         	var columns = $('#organizeColumns_body', dialog);
             var nestableDiv = $("#nestable", columns);
-            if (window.JSON) {
-	              console.log(window.JSON.stringify(nestableDiv.nestable('serialize')));
-	          } else {
-	             alert('JSON browser support required for this functionality.');
-	          }
+            var columnsJson = nestableDiv.nestable('serialize');
+            
+            var info = new Object();
+		    info["worksheetId"] = _worksheetId;
+		    info["workspaceId"] = $.workspaceGlobalInformation.id;
+		    info["command"] = "OrganizeColumnsCommand";
+
+		    var newInfo = [];
+		    newInfo.push(getParamObject("worksheetId", _worksheetId, "worksheetId"));
+		    newInfo.push(getParamObject("orderedColumns", columnsJson, "orderedColumns"));
+		    info["newInfo"] = JSON.stringify(newInfo);
+
+		    showLoading(info["worksheetId"]);
+		    var returned = $.ajax({
+		        url: "RequestController",
+		        type: "POST",
+		        data : info,
+		        dataType : "json",
+		        complete :
+		            function (xhr, textStatus) {
+		                // alert(xhr.responseText);
+		                var json = $.parseJSON(xhr.responseText);
+		                parse(json);
+		                hideLoading(info["worksheetId"]);
+		            },
+		        error :
+		            function (xhr, textStatus) {
+		                alert("Error occured while organizing columns " + textStatus);
+		                hideLoading(info["worksheetId"]);
+		            }
+		    });
+		    
         };
         
         function show(worksheetId) {

@@ -1,15 +1,15 @@
 package edu.isi.karma.controller.update;
 
 import java.io.PrintWriter;
+import java.util.List;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import edu.isi.karma.rep.HNode;
-import edu.isi.karma.rep.HTable;
 import edu.isi.karma.rep.Worksheet;
 import edu.isi.karma.rep.alignment.SemanticTypes;
+import edu.isi.karma.view.VHNode;
 import edu.isi.karma.view.VWorksheet;
 import edu.isi.karma.view.VWorkspace;
 
@@ -36,9 +36,9 @@ public class AllWorksheetHeadersUpdate extends AbstractUpdate {
 					this.getClass().getSimpleName());
 			
 			Worksheet wk = vWorksheet.getWorksheet();
-			HTable headerTable = wk.getHeaders();
+			List<VHNode> viewHeaders = vWorksheet.getHeaderViewNodes();
 			
-			JSONArray columns = getColumnsJsonArray(headerTable, vWorksheet, wk.getSemanticTypes());
+			JSONArray columns = getColumnsJsonArray(viewHeaders, wk.getSemanticTypes());
 			response.put(JsonKeys.columns.name(), columns);
 			
 			pw.println(response.toString());
@@ -48,20 +48,20 @@ public class AllWorksheetHeadersUpdate extends AbstractUpdate {
 
 	}
 	
-	private JSONArray getColumnsJsonArray(HTable table, VWorksheet vWorksheet, SemanticTypes semTypes) {
+	private JSONArray getColumnsJsonArray(List<VHNode> viewHeaders, SemanticTypes semTypes) {
 		JSONArray columns = new JSONArray();
-		for(String hNodeId : table.getOrderedNodeIds()) {
+		for(VHNode headerNode : viewHeaders) {
 			JSONObject column = new JSONObject();
-			column.put(JsonKeys.id.name(), hNodeId);
+			column.put(JsonKeys.id.name(), headerNode.getId());
 			
-			HNode hnode = table.getHNode(hNodeId);
-			column.put(JsonKeys.name.name(), hnode.getColumnName());
-			column.put(JsonKeys.visible.name(), vWorksheet.isHeaderNodeVisible(table.getId(), hNodeId));
-			boolean hideable = (semTypes.getSemanticTypeForHNodeId(hNodeId) == null) ? true : false;
+		
+			column.put(JsonKeys.name.name(), headerNode.getColumnName());
+			column.put(JsonKeys.visible.name(), headerNode.isVisible());
+			boolean hideable = (semTypes.getSemanticTypeForHNodeId(headerNode.getId()) == null) ? true : false;
 			
 			
-			if(hnode.hasNestedTable()) {
-				JSONArray children = getColumnsJsonArray(hnode.getNestedTable(), vWorksheet, semTypes);
+			if(headerNode.hasNestedTable()) {
+				JSONArray children = getColumnsJsonArray(headerNode.getNestedNodes(), semTypes);
 				column.put(JsonKeys.children.name(), children);
 				if(hideable) {
 					//check if any of the children are not hideable, then this is not hideable

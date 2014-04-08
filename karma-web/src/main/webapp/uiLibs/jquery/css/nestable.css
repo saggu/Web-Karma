@@ -25,7 +25,7 @@ html .cf { zoom: 1; }
 .dd-empty,
 .dd-placeholder { display: block; position: relative; margin: 0; padding: 0; min-height: 20px; font-size: 13px; line-height: 20px; }
 
-.dd-handle { display: block; height: 30px; margin: 5px 0; padding: 5px 10px; color: #333; text-decoration: none; font-weight: bold; border: 1px solid #ccc;
+.dd-handle { display: block; margin: 2px 0; padding: 1px 10px; color: #333; text-decoration: none; font-weight: bold; border: 1px solid #ccc;
     background: #fafafa;
     background: -webkit-linear-gradient(top, #fafafa 0%, #eee 100%);
     background:    -moz-linear-gradient(top, #fafafa 0%, #eee 100%);
@@ -64,7 +64,7 @@ html .cf { zoom: 1; }
  * Nestable Extras
  */
 
-.nestable-lists { display: block; clear: both; padding: 30px 0; width: 100%; border: 0;  }
+.nestable-lists { display: block; clear: both; padding: 2px 0; width: 100%; border: 0;  }
 .nestable-lists .glyphicon { cursor: pointer}
 .nestable-lists .glyphicon-noclick { cursor: default}
 

@@ -70,7 +70,8 @@ public class WorksheetDataUpdate extends AbstractUpdate {
 			TablePager pager = vWorksheet.getTopTablePager();
 			
 			JSONArray rows = getRowsUsingPager(
-					pager, vWorksheet, vWorkspace.getPreferences().getIntViewPreferenceValue(
+							pager, vWorksheet,
+							vWorksheet.getHeaderViewNodes(), vWorkspace.getPreferences().getIntViewPreferenceValue(
 							ViewPreference.maxCharactersInCell));
 			int rowsLeft = dataTable.getNumRows() - rows.length();
 			rowsLeft = rowsLeft < 0 ? 0 : rowsLeft;
@@ -85,62 +86,54 @@ public class WorksheetDataUpdate extends AbstractUpdate {
 		}
 	}
 
-	private JSONArray getRowsUsingPager(TablePager pager, VWorksheet vWorksheet, int maxDataDisplayLength) throws JSONException {
-		return getRowsJsonArray(pager.getRows(), vWorksheet, maxDataDisplayLength);
+	private JSONArray getRowsUsingPager(TablePager pager, VWorksheet vWorksheet, List<VHNode> orderedHnodeIds, int maxDataDisplayLength) throws JSONException {
+		return getRowsJsonArray(pager.getRows(),vWorksheet,  orderedHnodeIds, maxDataDisplayLength);
 	}
 	
-	public JSONArray getRowsJsonArray(List<Row> rows, VWorksheet vWorksheet, 
+	public JSONArray getRowsJsonArray(List<Row> rows, VWorksheet vWorksheet, List<VHNode> orderedHnodeIds, 
 			int maxDataDisplayLength) throws JSONException {
 		JSONArray rowsArr = new JSONArray();
 		
 //		HTable hTable = null;
-		List<VHNode> orderedHnodeIds = null;
+		
 		for (Row row:rows) {
 			JSONArray rowValueArray = new JSONArray();
-			
-			// Get the HTable so that we get the values in the correct order of columns
-			if (orderedHnodeIds == null) {
-				String hTableId = row.getBelongsToTable().getHTableId();
-//				hTable = vWorksheet.getHeaderTable(hTableId);
-				
-				orderedHnodeIds = vWorksheet.getHeaderViewNodes(hTableId);
-				if (orderedHnodeIds == null) {
-					logger.error("No HTable found for a row. This should not happen!");
-					continue;
-				}
-//				orderedHnodeIds = hTable.getOrderedNodeIds();
-			}
+		
 			
 			for (VHNode vNode : orderedHnodeIds) {
-				Node rowNode = row.getNode(vNode.getId());
-				JSONObject nodeObj = new JSONObject();
-				nodeObj.put(JsonKeys.columnClass.name(), 
-						WorksheetHeadersUpdate.getColumnClass(vNode.getId()));
-				nodeObj.put(JsonKeys.nodeId.name(), rowNode.getId());
-				nodeObj.put(JsonKeys.rowID.name(), row.getId());
-				if (vNode.hasNestedTable()) {
-					nodeObj.put(JsonKeys.hasNestedTable.name(), true);
-					Table nestedTable = rowNode.getNestedTable();
-					JSONArray nestedTableRows = getRowsUsingPager( 
-							vWorksheet.getNestedTablePager(nestedTable), vWorksheet, 
-							maxDataDisplayLength);
-					nodeObj.put(JsonKeys.nestedRows.name(), nestedTableRows);
-					nodeObj.put(JsonKeys.tableId.name(), rowNode.getNestedTable().getId());
-					
-					int rowsLeft = nestedTable.getNumRows() - nestedTableRows.length();
-					rowsLeft = rowsLeft < 0 ? 0 : rowsLeft;
-					nodeObj.put(JsonKeys.additionalRowsCount.name(), rowsLeft);
-					
-				} else {
-					String nodeVal = rowNode.getValue().asString();
-					nodeVal = (nodeVal == null) ? "" : nodeVal;
-					String displayVal = (nodeVal.length() > maxDataDisplayLength) 
-							? nodeVal.substring(0, maxDataDisplayLength) + "..." : nodeVal;
-					nodeObj.put(JsonKeys.displayValue.name(), displayVal);
-					nodeObj.put(JsonKeys.expandedValue.name(), nodeVal);
-					nodeObj.put(JsonKeys.hasNestedTable.name(), false);
+				if(vNode.isVisible()) {
+					Node rowNode = row.getNode(vNode.getId());
+					JSONObject nodeObj = new JSONObject();
+					nodeObj.put(JsonKeys.columnClass.name(), 
+							WorksheetHeadersUpdate.getColumnClass(vNode.getId()));
+					nodeObj.put(JsonKeys.nodeId.name(), rowNode.getId());
+					nodeObj.put(JsonKeys.rowID.name(), row.getId());
+					if (vNode.hasNestedTable()) {
+						nodeObj.put(JsonKeys.hasNestedTable.name(), true);
+						Table nestedTable = rowNode.getNestedTable();
+						JSONArray nestedTableRows = getRowsUsingPager( 
+								vWorksheet.getNestedTablePager(nestedTable), 
+								vWorksheet,
+								vNode.getNestedNodes(), 
+								maxDataDisplayLength);
+						nodeObj.put(JsonKeys.nestedRows.name(), nestedTableRows);
+						nodeObj.put(JsonKeys.tableId.name(), rowNode.getNestedTable().getId());
+						
+						int rowsLeft = nestedTable.getNumRows() - nestedTableRows.length();
+						rowsLeft = rowsLeft < 0 ? 0 : rowsLeft;
+						nodeObj.put(JsonKeys.additionalRowsCount.name(), rowsLeft);
+						
+					} else {
+						String nodeVal = rowNode.getValue().asString();
+						nodeVal = (nodeVal == null) ? "" : nodeVal;
+						String displayVal = (nodeVal.length() > maxDataDisplayLength) 
+								? nodeVal.substring(0, maxDataDisplayLength) + "..." : nodeVal;
+						nodeObj.put(JsonKeys.displayValue.name(), displayVal);
+						nodeObj.put(JsonKeys.expandedValue.name(), nodeVal);
+						nodeObj.put(JsonKeys.hasNestedTable.name(), false);
+					}
+					rowValueArray.put(nodeObj);
 				}
-				rowValueArray.put(nodeObj);
 			}
 			rowsArr.put(rowValueArray);
 		}

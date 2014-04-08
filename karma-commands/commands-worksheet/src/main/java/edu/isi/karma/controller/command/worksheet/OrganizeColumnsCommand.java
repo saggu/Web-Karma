@@ -1,5 +1,7 @@
 package edu.isi.karma.controller.command.worksheet;
 
+import java.util.ArrayList;
+
 import org.json.JSONArray;
 
 import edu.isi.karma.controller.command.CommandException;
@@ -8,11 +10,15 @@ import edu.isi.karma.controller.command.WorksheetCommand;
 import edu.isi.karma.controller.update.UpdateContainer;
 import edu.isi.karma.controller.update.WorksheetUpdateFactory;
 import edu.isi.karma.rep.Workspace;
+import edu.isi.karma.view.VHNode;
+import edu.isi.karma.view.VWorksheet;
+import edu.isi.karma.view.VWorkspace;
+import edu.isi.karma.view.VWorkspaceRegistry;
 
 
 public class OrganizeColumnsCommand extends WorksheetCommand {
 	private String workspaceId;
-	private JSONArray prevOrderedColumns;
+	private ArrayList<VHNode> prevOrderedColumns;
 	private JSONArray orderedColumns;
 	
 	protected OrganizeColumnsCommand(String id, String workspaceId, String worksheetId, org.json.JSONArray orderedColumns) {
@@ -33,7 +39,6 @@ public class OrganizeColumnsCommand extends WorksheetCommand {
 
 	@Override
 	public String getDescription() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
@@ -44,13 +49,12 @@ public class OrganizeColumnsCommand extends WorksheetCommand {
 
 	@Override
 	public UpdateContainer doIt(Workspace workspace) throws CommandException {
-		//Calculate the prevOrderColum2ns
-		
 		orderColumns(orderedColumns);
 		
 		UpdateContainer c =  new UpdateContainer();
-		c.append(WorksheetUpdateFactory.createRegenerateWorksheetUpdates(worksheetId));
+		c.append(WorksheetUpdateFactory.createWorksheetHierarchicalUpdates(worksheetId));
 		c.append(computeAlignmentAndSemanticTypesAndCreateUpdates(workspace));
+		
 		return c;
 	}
 
@@ -60,16 +64,24 @@ public class OrganizeColumnsCommand extends WorksheetCommand {
 			orderColumns(prevOrderedColumns);
 		}
 		UpdateContainer c =  new UpdateContainer();
-		c.append(WorksheetUpdateFactory.createRegenerateWorksheetUpdates(worksheetId));
+		c.append(WorksheetUpdateFactory.createWorksheetHierarchicalUpdates(worksheetId));
 		c.append(computeAlignmentAndSemanticTypesAndCreateUpdates(workspace));
 		return c;
 	}
 
 	private void orderColumns(JSONArray columns) {
-//		
-//		VWorkspace vWorkspace = VWorkspaceRegistry.getInstance().getVWorkspace(workspaceId);
-//		VWorksheet viewWorksheet = vWorkspace.getViewFactory().getVWorksheetByWorksheetId(worksheetId);
-//		
+		VWorkspace vWorkspace = VWorkspaceRegistry.getInstance().getVWorkspace(workspaceId);
+		VWorksheet viewWorksheet = vWorkspace.getViewFactory().getVWorksheetByWorksheetId(worksheetId);
+		prevOrderedColumns = viewWorksheet.getHeaderViewNodes();
 		
+		viewWorksheet.organizeColumns(columns);
+	}
+	
+	private void orderColumns(ArrayList<VHNode> columns) {
+		VWorkspace vWorkspace = VWorkspaceRegistry.getInstance().getVWorkspace(workspaceId);
+		VWorksheet viewWorksheet = vWorkspace.getViewFactory().getVWorksheetByWorksheetId(worksheetId);
+		prevOrderedColumns = viewWorksheet.getHeaderViewNodes();
+		
+		viewWorksheet.organizeColumns(columns);
 	}
 }

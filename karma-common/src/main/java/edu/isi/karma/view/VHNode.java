@@ -5,15 +5,15 @@ import java.util.ArrayList;
 public class VHNode {
 	private String id;
 	private String columnName;
+	private boolean visible;
 	
-	private boolean hasNestedTable;
 	private ArrayList<VHNode> nestedNodes;
 	
 	
 	public VHNode(String id, String columnName) {
 		this.id = id;
 		this.columnName = columnName;
-		this.hasNestedTable = false;
+		this.visible = true;
 		this.nestedNodes = new ArrayList<>();
 	}
 	
@@ -26,9 +26,12 @@ public class VHNode {
 	}
 	
 	public boolean hasNestedTable() {
-		return hasNestedTable;
+		return this.nestedNodes.size() > 0;
 	}
 	
+	public boolean isVisible() {
+		return visible;
+	}
 	
 	public ArrayList<VHNode> getNestedNodes() {
 		return nestedNodes;
@@ -36,8 +39,54 @@ public class VHNode {
 	
 	public void addNestedNode(VHNode node) {
 		this.nestedNodes.add(node);
-		this.hasNestedTable = true;
+	}
+	
+	public void setVisible(boolean visible) {
+		this.visible = visible;
+	}
+
+	public ArrayList<String> getAllPaths() {
+		ArrayList<String> paths = new ArrayList<String>();
+		paths.add(getNodePathSignature());
+		
+		
+		for(VHNode nestedNode : getNestedNodes()) {
+			ArrayList<String> nestedPaths = nestedNode.getAllPaths();
+			for(String nestedPath : nestedPaths) {
+				paths.add(getNodePathSignature() + "/" + nestedPath);
+			}
+		}
+		return paths;
+	}
+	
+	public static VHNode getVHNodeFromPath(String path, ArrayList<VHNode> nodes) {
+		int idx = path.indexOf("/");
+		String pathStart = path, pathEnd = null;
+		if(idx != -1) {
+			pathStart = path.substring(0, idx);
+			pathEnd = path.substring(idx+1);
+		}
+		
+		VHNode startNode = null;
+		
+		for(VHNode node : nodes) {
+			if(node.getNodePathSignature().equals(pathStart)) {
+				startNode =  node;
+				break;
+			}
+		}
+		
+		if(startNode != null) {
+			if(pathEnd == null)
+				return startNode;
+			else
+				return getVHNodeFromPath(pathEnd, startNode.getNestedNodes());
+		}
+		return null;
 	}
 	
 	
+	public String getNodePathSignature() {
+		return getId() + ":" + getColumnName();
+	}
 }

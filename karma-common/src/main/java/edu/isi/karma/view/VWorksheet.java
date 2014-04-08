@@ -37,7 +37,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import net.sf.json.JSONArray;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class VWorksheet extends ViewEntity {
 
@@ -63,15 +66,16 @@ public class VWorksheet extends ViewEntity {
 	 * columns appear.
 	 */
 	
-	private final List<HNodePath> columns;
+	//private final List<HNodePath> columns;
 
 	private ArrayList<VHNode> headerViewNodes;
-	private HashMap<String, ArrayList<VHNode>> htableHeaderViewMap;
+	
 	/**
 	 * The maximum number of rows to show in the nested tables.
 	 */
 	private int maxRowsToShowInNestedTables;
 
+	private static Logger logger = LoggerFactory.getLogger(VWorksheet.class);
 
 	/**
 	 * We create a TablePager for the top level table and every nested table we
@@ -83,7 +87,7 @@ public class VWorksheet extends ViewEntity {
 			VWorkspace vWorkspace) {
 		super(id);
 		this.worksheet = worksheet;
-		this.columns = columns;
+		//this.columns = columns;
 		this.maxRowsToShowInNestedTables = vWorkspace.getPreferences()
 				.getIntViewPreferenceValue(
 						ViewPreference.maxRowsToShowInNestedTables);
@@ -93,11 +97,11 @@ public class VWorksheet extends ViewEntity {
 				vWorkspace.getPreferences().getIntViewPreferenceValue(
 						ViewPreference.defaultRowsToShowInTopTables));
 		
-		this.htableHeaderViewMap = new HashMap<String, ArrayList<VHNode>>();
+		
 		this.headerViewNodes = initHeaderViewNodes(worksheet.getHeaders());
-		this.htableHeaderViewMap.put(worksheet.getHeaders().getId(), this.headerViewNodes);
 	}
 
+	
 	private ArrayList<VHNode> initHeaderViewNodes(HTable table) {
 		ArrayList<VHNode> vNodes = new ArrayList<>();
 		for(String hNodeId : table.getOrderedNodeIds()) {
@@ -109,7 +113,6 @@ public class VWorksheet extends ViewEntity {
 				for(VHNode nestedVNode : nestedNodes) {
 					vNode.addNestedNode(nestedVNode);
 				}
-				this.htableHeaderViewMap.put(nestedTable.getId(), vNode.getNestedNodes());
 			}
 			vNodes.add(vNode);
 		}
@@ -181,59 +184,185 @@ public class VWorksheet extends ViewEntity {
 	public void setMaxRowsToShowInNestedTables(int maxRowsToShowInNestedTables) {
 		this.maxRowsToShowInNestedTables = maxRowsToShowInNestedTables;
 	}
-
-	public List<HNodePath> getColumns() {
-		return columns;
-	}
 	
-	public List<VHNode> getHeaderViewNodes() {
+	public ArrayList<VHNode> getHeaderViewNodes() {
 		return this.headerViewNodes;
 	}
 	
-	public List<VHNode> getHeaderViewNodes(String htableId) {
-		return this.htableHeaderViewMap.get(htableId);
+	public ArrayList<String> getHeaderVisibleNodes() {
+		return getVisibleViewNodes(this.headerViewNodes);
 	}
 	
-	public boolean isHeaderNodeVisible(String htableId, String hnodeId) {
-		List<VHNode> nodes = getHeaderViewNodes(htableId);
-		for(VHNode node : nodes) {
-			if(node.getId().equals(hnodeId))
-				return true;
+	private ArrayList<String> getVisibleViewNodes(ArrayList<VHNode> list) {
+		ArrayList<String> visibleNodeIds = new ArrayList<>();
+		for(VHNode node : list) {
+			if(node.isVisible()) {
+				visibleNodeIds.add(node.getId());
+				visibleNodeIds.addAll(getVisibleViewNodes(node.getNestedNodes()));
+			}
 		}
-		return false;
+		return visibleNodeIds;
 	}
 	
-	public void organizeColumn(JSONArray columns) {
-//		ArrayList<HNode> newHeaders = new ArrayList<HNode>();
+//	public ArrayList<VHNode> getHeaderViewNodes(String id) {
+//		if(id.equals(worksheet.getHeaders().getId()))
+//			return this.headerViewNodes;
 //		
-//		for(Object columnObj : columns) {
-//			JSONObject column = (JSONObject)columnObj;
-//			if(column.getBoolean("visible") == true) {
-//				newHeaders.add(this.headers.getHNode(column.getString("id")));
-//				Object nestedColumns = column.get("nestedColumns");
-//				if(nestedColumns != null && nestedColumns instanceof JSONArray) {
-//					
+//		return getChildHeaderNodes(this.headerViewNodes, id);
+//	}
+//	
+//	private ArrayList<VHNode> getChildHeaderNodes(ArrayList<VHNode> vNodes, String id) {
+//		ArrayList<VHNode> children = null;
+//		for(VHNode node : vNodes) {
+//			if(node.getId().equals(id)) {
+//				children = node.getNestedNodes();
+//				break;
+//			}
+//			
+//			if(node.hasNestedTable()) {
+//				ArrayList<VHNode> matchingChild = getChildHeaderNodes(node.getNestedNodes(), id);
+//				if(matchingChild != null) {
+//					children = matchingChild;
+//					break;
 //				}
 //			}
 //		}
+//		return children;
+//	}
+//	
+	public boolean isHeaderNodeVisible(String hnodeId) {
+		return getHeaderVisibleNodes().contains(hnodeId);
+	}
+
+	
+	private ArrayList<VHNode> generateOrganizedColumns(JSONArray columns) {
+		ArrayList<VHNode> vNodes = new ArrayList<>();
+		
+		for(int i=0; i<columns.length(); i++) {
+			JSONObject column = columns.getJSONObject(i);
+			
+			VHNode vNode = new VHNode(column.getString("id"), column.getString("name"));
+			vNode.setVisible(column.getBoolean("visible"));
+			if(column.has("children")) {
+				ArrayList<VHNode> nestedNodes = generateOrganizedColumns(column.getJSONArray("children"));
+				for(VHNode nestedVNode : nestedNodes) {
+					vNode.addNestedNode(nestedVNode);
+				}
+			}
+			vNodes.add(vNode);
+			
+		}
+		
+		return vNodes;
 	}
 	
-	private ArrayList<HNode> generateOrganizedColumns(JSONArray columns) {
-		ArrayList<HNode> newHeaders = new ArrayList<HNode>();
-//		
-//		for(Object columnObj : columns) {
-//			JSONObject column = (JSONObject)columnObj;
-//			if(column.getBoolean("visible") == true) {
-//				HNode node = this.headers.getHNode(column.getString("id"));
-//				newHeaders.add(node);
-//				Object nestedColumns = column.get("nestedColumns");
-//				if(nestedColumns != null && nestedColumns instanceof JSONArray) {
-//					ArrayList<HNode> nestedHeaders = generateOrganizedColumns((JSONArray)nestedColumns);
-//					node.
-//				}
-//			}
-//		}
-		return newHeaders;
+	public void organizeColumns(JSONArray columns) {
+		this.headerViewNodes = generateOrganizedColumns(columns);
+	}
+	
+	public void organizeColumns(ArrayList<VHNode> columns) {
+		this.headerViewNodes.clear();
+		this.headerViewNodes.addAll(columns);
+	}
+	
+	public void updateHeaderViewNodes(ArrayList<VHNode> oldOrderedNodes) {
+		
+		ArrayList<String> oldPaths = new ArrayList<>();
+		for(VHNode node : oldOrderedNodes)
+			oldPaths.addAll(node.getAllPaths());
+		
+		ArrayList<String> newPaths = new ArrayList<>();
+		for(VHNode node : this.headerViewNodes)
+			newPaths.addAll(node.getAllPaths());
+		
+		//1/. Get all paths in old that are not in new
+		ArrayList<String> pathsToDel = new ArrayList<>();
+		for(String oldPath : oldPaths) {
+			if(!newPaths.contains(oldPath)) {
+				pathsToDel.add(oldPath);
+			}
+		}
+		
+		//2. Get all paths in new that are not in old
+		ArrayList<String> pathsToAdd = new ArrayList<>();
+		for(int i=0; i<newPaths.size(); i++) {
+			String newPath = newPaths.get(i);
+			if(!oldPaths.contains(newPath)) {
+				String after = newPaths.get(i-1);
+				pathsToAdd.add(newPath + "$$" + after);
+			}
+		}
+		
+		ArrayList<VHNode> allNodes = new ArrayList<>();
+		allNodes.addAll(oldOrderedNodes);
+		this.headerViewNodes = allNodes;
+		
+		for(String path : pathsToDel) {
+			deleteHeaderViewPath(this.headerViewNodes, path);
+		}
+		
+		for(String path : pathsToAdd) {
+			addHeaderViewPath(path);
+		}
+	}
+	
+	private void addHeaderViewPath(String path) {
+		int after = path.indexOf("$$");
+		String afterPath = path.substring(after + 2);
+		path = path.substring(0, after);
+		
+		int idx = path.indexOf("/");
+		String pathStart = path, pathEnd = null;
+		if(idx != -1) {
+			pathStart = path.substring(0, idx);
+			pathEnd = path.substring(idx+1);
+		}
+		
+		ArrayList<VHNode> parentList = this.headerViewNodes;
+		if(pathEnd != null) {
+			VHNode parentNode = VHNode.getVHNodeFromPath(pathStart, this.headerViewNodes);
+			parentList = parentNode.getNestedNodes();
+			pathStart = pathEnd;
+		}
+		
+		idx = pathStart.indexOf(":");
+		String id = pathStart.substring(0, idx);
+		String name = pathStart.substring(idx+1);
+		VHNode newNode = new VHNode(id, name);
+		
+		int insertIdx = -1;
+		idx = afterPath.lastIndexOf("/");
+		if(idx != -1)
+			afterPath = afterPath.substring(idx + 1);
+		for(int i=0; i<parentList.size(); i++) {
+			VHNode node = parentList.get(i);
+			if(node.getNodePathSignature().equals(afterPath)) {
+				insertIdx = i;
+				break;
+			}
+		}
+		parentList.add(insertIdx+1, newNode);
+	}
+	
+	private void deleteHeaderViewPath(ArrayList<VHNode> nodes, String path) {
+		int idx = path.indexOf("/");
+		String pathStart = path, pathEnd = null;
+		if(idx != -1) {
+			pathStart = path.substring(0, idx);
+			pathEnd = path.substring(idx+1);
+		}
+		
+		for(VHNode node : nodes) {
+			if(node.getNodePathSignature().equals(pathStart)) {
+				if(pathEnd == null) {
+					nodes.remove(node);
+				} else {
+					deleteHeaderViewPath(node.getNestedNodes(), pathEnd);
+				}
+				break;
+			}
+			
+		}
 	}
 	
 	public void generateWorksheetListJson(String prefix, PrintWriter pw) {
