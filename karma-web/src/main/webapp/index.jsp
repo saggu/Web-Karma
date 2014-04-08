@@ -68,22 +68,9 @@ and related projects, please see: http://www.isi.edu/integration
     			font-size: 14px;
 			}
 			
-			@media (min-width: 1600px) {
-			  .container {
-			    width: 1570px;
-			  }
-			}
-
-			@media (min-width: 2048px) {
-			  .container {
-			    width: 2018px;
-			  }
-			}
 			
-			@media (min-width: 2560px) {
-			  .container {
-			    width: 2530px;
-			  }
+			.container {
+			    width: auto;
 			}
 			
 			a:hover, a:focus {
