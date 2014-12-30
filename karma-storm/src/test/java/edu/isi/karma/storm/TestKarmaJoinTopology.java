@@ -1,6 +1,7 @@
 package edu.isi.karma.storm;
 
-import java.util.Properties;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.storm.hdfs.bolt.SequenceFileBolt;
 import org.apache.storm.hdfs.bolt.format.DefaultFileNameFormat;
@@ -9,6 +10,10 @@ import org.apache.storm.hdfs.bolt.rotation.FileSizeRotationPolicy.Units;
 import org.apache.storm.hdfs.bolt.sync.CountSyncPolicy;
 import org.junit.Test;
 
+import edu.isi.karma.storm.bolt.KarmaJoinBolt;
+import edu.isi.karma.storm.function.KarmaSequenceFormat;
+import edu.isi.karma.storm.spout.KarmaSequenceFileSpout;
+import edu.isi.karma.storm.strategy.InMemoryJoinStrategy;
 import backtype.storm.Config;
 import backtype.storm.LocalCluster;
 import backtype.storm.generated.StormTopology;
@@ -22,12 +27,12 @@ public class TestKarmaJoinTopology {
 	public void testBasicTopology(){ 
 		TopologyBuilder builder = new TopologyBuilder(); 
 		builder.setSpout("karma-seq-spout", new KarmaSequenceFileSpout());
-		Properties basicKarmaBoltProperties = new Properties();
-		basicKarmaBoltProperties.setProperty("name", "Stormy");
-		basicKarmaBoltProperties.setProperty("karma.storm.join.source", "/Users/chengyey/exchange.seq");
-		basicKarmaBoltProperties.setProperty("karma.context.atid", "uri");
-		basicKarmaBoltProperties.setProperty("karma.storm.mergepath", "hasFeatureCollection,phonenumber_feature,featureObject,location");
-		basicKarmaBoltProperties.setProperty("karma.storm.reducer.field", "text");
+		Map<String, String> basicKarmaBoltProperties = new HashMap<String, String>();
+		basicKarmaBoltProperties.put("name", "Stormy");
+		basicKarmaBoltProperties.put("karma.storm.join.source", "/Users/chengyey/exchange.seq");
+		basicKarmaBoltProperties.put("karma.context.atid", "uri");
+		basicKarmaBoltProperties.put("karma.storm.mergepath", "hasFeatureCollection,phonenumber_feature,featureObject,location");
+		basicKarmaBoltProperties.put("karma.storm.reducer.field", "text");
 		KarmaJoinBolt bolt = new KarmaJoinBolt(basicKarmaBoltProperties, new InMemoryJoinStrategy());
 		builder.setBolt("karma-generate-json", bolt).shuffleGrouping("karma-seq-spout");
 		SequenceFileBolt sequenceFileBolt = new SequenceFileBolt();
