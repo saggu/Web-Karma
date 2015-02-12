@@ -14,6 +14,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import edu.isi.karma.modeling.Uris;
+import edu.isi.karma.modeling.alignment.learner.SemanticTypeMapping;
+import edu.isi.karma.modeling.alignment.learner.SteinerNodes;
 import edu.isi.karma.modeling.ontology.OntologyManager;
 import edu.isi.karma.modeling.steiner.topk.BANKSfromMM;
 import edu.isi.karma.modeling.steiner.topk.Fact;
@@ -30,6 +32,8 @@ import edu.isi.karma.rep.alignment.Node;
 import edu.isi.karma.rep.alignment.ObjectPropertyLink;
 import edu.isi.karma.rep.alignment.ObjectPropertyType;
 import edu.isi.karma.util.EncodingDetector;
+import edu.isi.karma.webserver.ServletContextParameterMap;
+import edu.isi.karma.webserver.ServletContextParameterMap.ContextParameter;
 
 public class GraphBuilderTopK extends GraphBuilder {
 	
@@ -37,17 +41,26 @@ public class GraphBuilderTopK extends GraphBuilder {
 
 	private HashMap<SteinerNode, TreeSet<SteinerEdge>> topKGraph;
 	private HashMap<String, SteinerNode> topKGraphNodes;
-
+//	private HashMap<DefaultLink, SteinerNode> linkToHelperNodeMap;
+//	private HashMap<SteinerNode, SteinerNode> helperNodeToSourceMap;
+//	private HashMap<SteinerNode, SteinerNode> helperNodeToTargetMap;
+	
 	public GraphBuilderTopK(OntologyManager ontologyManager, boolean addThingNode) { 
 		super(ontologyManager, addThingNode);
 		if (topKGraph == null) topKGraph = new HashMap<SteinerNode, TreeSet<SteinerEdge>>();
 		if (topKGraphNodes == null) topKGraphNodes = new HashMap<String, SteinerNode>();
+//		if (linkToHelperNodeMap == null) linkToHelperNodeMap = new HashMap<DefaultLink, SteinerNode>();
+//		if (helperNodeToSourceMap == null) helperNodeToSourceMap = new HashMap<SteinerNode, SteinerNode>();
+//		if (helperNodeToTargetMap == null) helperNodeToTargetMap = new HashMap<SteinerNode, SteinerNode>();
 	}
 	
 	public GraphBuilderTopK(OntologyManager ontologyManager, DirectedWeightedMultigraph<Node, DefaultLink> graph) {
-		super(ontologyManager, graph, false);
+		super(ontologyManager, graph, true);
 		if (topKGraph == null) topKGraph = new HashMap<SteinerNode, TreeSet<SteinerEdge>>();
 		if (topKGraphNodes == null) topKGraphNodes = new HashMap<String, SteinerNode>();
+//		if (linkToHelperNodeMap == null) linkToHelperNodeMap = new HashMap<DefaultLink, SteinerNode>();
+//		if (helperNodeToSourceMap == null) helperNodeToSourceMap = new HashMap<SteinerNode, SteinerNode>();
+//		if (helperNodeToTargetMap == null) helperNodeToTargetMap = new HashMap<SteinerNode, SteinerNode>();
 	}
 	
 	public HashMap<SteinerNode, TreeSet<SteinerEdge>> getTopKGraph() {
@@ -62,6 +75,24 @@ public class GraphBuilderTopK extends GraphBuilder {
 		return topKGraphNodes;
 	}
 
+//	public HashMap<DefaultLink, SteinerNode> getLinkToHelperNodeMap() {
+//		if (linkToHelperNodeMap == null)
+//			linkToHelperNodeMap = new HashMap<DefaultLink, SteinerNode>();
+//		return linkToHelperNodeMap;
+//	}
+	
+//	public HashMap<SteinerNode, SteinerNode> getHelperNodeToSourceMap() {
+//		if (helperNodeToSourceMap == null)
+//			helperNodeToSourceMap = new HashMap<SteinerNode, SteinerNode>();
+//		return helperNodeToSourceMap;
+//	}
+	
+//	public HashMap<SteinerNode, SteinerNode> getHelperNodeToTargetMap() {
+//		if (helperNodeToTargetMap == null)
+//			helperNodeToTargetMap = new HashMap<SteinerNode, SteinerNode>();
+//		return helperNodeToTargetMap;
+//	}
+	
 	public boolean addNode(Node node) {
 		if (super.addNode(node)) {
 			SteinerNode n = new SteinerNode(node.getId());
@@ -71,38 +102,105 @@ public class GraphBuilderTopK extends GraphBuilder {
 		} else
 			return false;
 	}
+	
 	public boolean addLink(Node source, Node target, DefaultLink link) {
+//		boolean duplicate = super.sourceIsConnectedToTarget(source, target);
 		if (super.addLink(source, target, link)) {
-			SteinerNode n1 = new SteinerNode(source.getId());
-			SteinerNode n2 = new SteinerNode(target.getId());
-			SteinerEdge e = new SteinerEdge(n1, link.getId(), n2, (float)link.getWeight());
-			getTopKGraph().get(n1).add(e);
-			getTopKGraph().get(n2).add(e);
-			return true;
+//			if (!duplicate) 
+			{
+				SteinerNode n1 = new SteinerNode(source.getId());
+				SteinerNode n2 = new SteinerNode(target.getId());
+				SteinerEdge e = new SteinerEdge(n1, link.getId(), n2, (float)link.getWeight());
+//				getTopKGraph().get(n1).add(e);
+				getTopKGraph().get(n2).add(e); // each node only stores its incoming links
+				return true;
+			} 
+//			else 
+//			{
+//				SteinerNode n1 = new SteinerNode(source.getId());
+//				SteinerNode helper = new SteinerNode("helper_" + link.getId());
+//				SteinerNode n2 = new SteinerNode(target.getId());
+//				
+//				float w = (float)link.getWeight();
+//				float w1 = w;
+//				float w2 = 0.0f;
+//				
+//				SteinerEdge e_1 = new SteinerEdge(n1, link.getId(), helper, w1);
+//				SteinerEdge e_2 = new SteinerEdge(helper, link.getId() + "_2", n2, w2);
+//
+//				getTopKGraphNodes().put(helper.getNodeId(), helper);
+//				getTopKGraph().put(helper, new TreeSet<SteinerEdge>());
+//				getTopKGraph().get(helper).add(e_1); 
+//				getTopKGraph().get(n2).add(e_2); 
+//				
+//				getLinkToHelperNodeMap().put(link, helper);
+//				getHelperNodeToSourceMap().put(helper, n1);
+//				getHelperNodeToTargetMap().put(helper, n2);
+//				return true;
+//			}
 		} else
 			return false;
 	}
 	
 	public boolean addLink(Node source, Node target, DefaultLink link, Double weight) {
+//		boolean duplicate = super.sourceIsConnectedToTarget(source, target);
 		if (super.addLink(source, target, link, weight)) {
-			SteinerNode n1 = new SteinerNode(source.getId());
-			SteinerNode n2 = new SteinerNode(target.getId());
-			SteinerEdge e = new SteinerEdge(n1, link.getId(), n2, (float)weight.doubleValue());
-			getTopKGraph().get(n1).add(e);
-			getTopKGraph().get(n2).add(e);
-			return true;
+//			if (!duplicate) 
+			{
+				SteinerNode n1 = new SteinerNode(source.getId());
+				SteinerNode n2 = new SteinerNode(target.getId());
+				SteinerEdge e = new SteinerEdge(n1, link.getId(), n2, (float)weight.doubleValue());
+//				getTopKGraph().get(n1).add(e);
+				getTopKGraph().get(n2).add(e); // each node only stores its incoming links
+				return true;
+			} 
+//			else {
+//				SteinerNode n1 = new SteinerNode(source.getId());
+//				SteinerNode helper = new SteinerNode("helper_" + link.getId());
+//				SteinerNode n2 = new SteinerNode(target.getId());
+//				
+//				float w = (float)link.getWeight();
+//				float w1 = w;
+//				float w2 = 0.0f;
+//				
+//				SteinerEdge e_1 = new SteinerEdge(n1, link.getId(), helper, w1);
+//				SteinerEdge e_2 = new SteinerEdge(helper, link.getId() + "_2", n2, w2);
+//
+//				getTopKGraphNodes().put(helper.getNodeId(), helper);
+//				getTopKGraph().put(helper, new TreeSet<SteinerEdge>());
+//				getTopKGraph().get(helper).add(e_1); 
+//				getTopKGraph().get(n2).add(e_2); 
+//				
+//				getLinkToHelperNodeMap().put(link, helper);
+//				getHelperNodeToSourceMap().put(helper, n1);
+//				getHelperNodeToTargetMap().put(helper, n2);
+//				return true;
+//			}
 		} else
 			return false;
 	}
 	
 	public boolean removeLink(DefaultLink link) {
 		if (super.removeLink(link)) {
+			
 			SteinerNode n1 = new SteinerNode(link.getSource().getId());
 			SteinerNode n2 = new SteinerNode(link.getTarget().getId());
-			SteinerEdge e = new SteinerEdge(n1, link.getId(), n2, (float)link.getWeight());
-			getTopKGraph().get(n1).remove(e);
-			getTopKGraph().get(n2).remove(e);
-			return true;
+
+//			SteinerNode helperNode = getLinkToHelperNodeMap().get(link);
+//			if (helperNode != null) {
+//				SteinerEdge e1 = new SteinerEdge(n1, link.getId(), helperNode, (float)link.getWeight());
+//				SteinerEdge e2 = new SteinerEdge(helperNode, link.getId() + "_helper", n2, 0.0f);
+//				getTopKGraph().get(helperNode).remove(e1);
+//				getTopKGraph().get(getHelperNodeToTargetMap().get(helperNode)).remove(e2);
+//				getTopKGraph().remove(helperNode);
+//				return true;
+//			} else 
+			{
+				SteinerEdge e = new SteinerEdge(n1, link.getId(), n2, (float)link.getWeight());
+//				getTopKGraph().get(n1).remove(e);
+				getTopKGraph().get(n2).remove(e);
+				return true;
+			}
 		} else
 			return false;
 	}
@@ -111,16 +209,28 @@ public class GraphBuilderTopK extends GraphBuilder {
 		super.changeLinkWeight(link, weight);
 		SteinerNode n1 = new SteinerNode(link.getSource().getId());
 		SteinerNode n2 = new SteinerNode(link.getTarget().getId());
-		SteinerEdge e = new SteinerEdge(n1, link.getId(), n2, (float)weight);
-		getTopKGraph().get(n1).remove(e);
-		getTopKGraph().get(n2).remove(e);
-		getTopKGraph().get(n1).add(e);
-		getTopKGraph().get(n2).add(e);
-	}
-	
-	public List<DirectedWeightedMultigraph<Node, LabeledLink>> getTopKSteinerTrees(Set<Node> steinerNodes, int k) 
-			throws Exception {
 
+//		SteinerNode helperNode = getLinkToHelperNodeMap().get(link);
+//		if (helperNode != null) {
+//			SteinerEdge e1 = new SteinerEdge(n1, link.getId(), helperNode, (float)weight);
+//			getTopKGraph().get(helperNode).remove(e1);
+//			getTopKGraph().get(helperNode).add(e1);
+//		} else 
+		{
+			SteinerEdge e = new SteinerEdge(n1, link.getId(), n2, (float)weight);
+//			getTopKGraph().get(n1).remove(e);
+			getTopKGraph().get(n2).remove(e);
+//			getTopKGraph().get(n1).add(e);
+			getTopKGraph().get(n2).add(e);
+		}
+
+	}
+
+	public List<DirectedWeightedMultigraph<Node, LabeledLink>> getTopKSteinerTrees(Set<Node> steinerNodes, 
+			int k, 
+			boolean onlyAddInternalNodes) 
+		throws Exception {
+		
 		if (steinerNodes == null) {
 			logger.error("no steiner node specified!");
 			return null;
@@ -131,6 +241,9 @@ public class GraphBuilderTopK extends GraphBuilder {
 		
 		TreeSet<SteinerNode> terminals= new TreeSet<SteinerNode>();
 		for (Node n : steinerNodes) {
+			if (onlyAddInternalNodes && !(n instanceof InternalNode))
+				continue;
+
 			terminals.add(new SteinerNode(n.getId()));
 		}
 		
@@ -154,6 +267,34 @@ public class GraphBuilderTopK extends GraphBuilder {
 		return results;
 	}
 	
+	public List<DirectedWeightedMultigraph<Node, LabeledLink>> getTopKSteinerTrees(
+			SteinerNodes steinerNodes, 
+			int k, 
+			boolean onlyAddInternalNodes) 
+			throws Exception {
+
+		List<DirectedWeightedMultigraph<Node, LabeledLink>> results = 
+				getTopKSteinerTrees(steinerNodes.getNodes(), k, onlyAddInternalNodes);
+		
+		// adding data property links
+		if (results != null && onlyAddInternalNodes) {
+			for (DirectedWeightedMultigraph<Node, LabeledLink> tree : results) {
+
+				if (steinerNodes.getColumnNodeInfo() != null) {
+					for (SemanticTypeMapping stm : steinerNodes.getColumnNodeInfo().values()) {
+						LabeledLink dataPropertyLink = stm.getLink();
+						tree.addVertex(stm.getTarget());
+						tree.addEdge(stm.getSource(), stm.getTarget(), dataPropertyLink); 
+						tree.setEdgeWeight(dataPropertyLink, stm.getLink().getWeight());
+					}
+				}
+				
+			}
+		}
+		
+		return results;
+	}
+	
 	public DirectedWeightedMultigraph<Node, LabeledLink> getLabeledSteinerTree(ResultGraph initialTree) {
 		WeightedMultigraph<Node, DefaultLink> tree =
 				new WeightedMultigraph<Node, DefaultLink>(DefaultLink.class);
@@ -163,8 +304,21 @@ public class GraphBuilderTopK extends GraphBuilder {
 		DefaultLink l; 
 		double weight;
 		for (Fact f : initialTree.getFacts()) { 
-			source = this.getIdToNodeMap().get(f.source().name());
-			target = this.getIdToNodeMap().get(f.destination().name());
+
+//			if (f.source().name().startsWith("helper_")) { // source node is helper
+//				continue;
+//			}
+//
+//			if (f.destination().name().startsWith("helper_")) { // target node is helper
+//				source = this.getIdToNodeMap().get(f.source().name());
+//				String targetId = getHelperNodeToTargetMap().get(f.destination()).getNodeId();
+//				target = this.getIdToNodeMap().get(targetId);
+//			} else 
+			{
+				source = this.getIdToNodeMap().get(f.source().name());
+				target = this.getIdToNodeMap().get(f.destination().name());
+			}
+
 			
 			if (LinkIdFactory.getLinkUri(f.label().name).equals(Uris.DEFAULT_LINK_URI)) {
 				String id = LinkIdFactory.getLinkId(Uris.DEFAULT_LINK_URI, source.getId(), target.getId());					
@@ -192,6 +346,8 @@ public class GraphBuilderTopK extends GraphBuilder {
 
 	public static void main(String[] args) throws Exception {
 		
+		ServletContextParameterMap.setParameterValue(ContextParameter.USER_CONFIG_DIRECTORY, "/Users/mohsen/karma/config");
+
 		/** Check if any ontology needs to be preloaded **/
 		String preloadedOntDir = "/Users/mohsen/karma/preloaded-ontologies/";
 		File ontDir = new File(preloadedOntDir);
@@ -233,12 +389,20 @@ public class GraphBuilderTopK extends GraphBuilder {
 		gbtk.addNode(n3);
 		gbtk.addNode(n4);
 
-		ObjectPropertyLink e1 = new ObjectPropertyLink("e1", new Label("http://erlangen-crm.org/current/P104i_applies_to"), ObjectPropertyType.Direct);
-		ObjectPropertyLink e2 = new ObjectPropertyLink("e2", new Label("http://erlangen-crm.org/current/P105i_has_right_on"), ObjectPropertyType.Direct);
-		ObjectPropertyLink e3 = new ObjectPropertyLink("e3", new Label("http://erlangen-crm.org/current/P31_has_modified"), ObjectPropertyType.Direct);
-		ObjectPropertyLink e4 = new ObjectPropertyLink("e4", new Label("http://erlangen-crm.org/current/P106i_forms_part_of"), ObjectPropertyType.Direct);
-		ObjectPropertyLink e5 = new ObjectPropertyLink("e5", new Label("http://erlangen-crm.org/current/P92_brought_into_existence"), ObjectPropertyType.Direct);
-		ObjectPropertyLink e6 = new ObjectPropertyLink("e6", new Label("http://erlangen-crm.org/current/P108_has_produced"), ObjectPropertyType.Direct);
+		ObjectPropertyLink e1 = new ObjectPropertyLink(LinkIdFactory.getLinkId("e1", n1.getId(), n2.getId()), 
+				new Label("http://erlangen-crm.org/current/P104i_applies_to"), ObjectPropertyType.Direct);
+		ObjectPropertyLink e2 = new ObjectPropertyLink(LinkIdFactory.getLinkId("e2", n1.getId(), n4.getId()),
+				new Label("http://erlangen-crm.org/current/P105i_has_right_on"), ObjectPropertyType.Direct);
+		ObjectPropertyLink e3 = new ObjectPropertyLink(LinkIdFactory.getLinkId("e3", n1.getId(), n3.getId()), 
+				new Label("http://erlangen-crm.org/current/P31_has_modified"), ObjectPropertyType.Direct);
+		ObjectPropertyLink e4 = new ObjectPropertyLink(LinkIdFactory.getLinkId("e4", n2.getId(), n3.getId()),
+				new Label("http://erlangen-crm.org/current/P106i_forms_part_of"), ObjectPropertyType.Direct);
+		ObjectPropertyLink e5 = new ObjectPropertyLink(LinkIdFactory.getLinkId("e5", n2.getId(), n4.getId()),
+				new Label("http://erlangen-crm.org/current/P92_brought_into_existence"), ObjectPropertyType.Direct);
+		ObjectPropertyLink e6 = new ObjectPropertyLink(LinkIdFactory.getLinkId("e6", n4.getId(), n3.getId()),
+				new Label("http://erlangen-crm.org/current/P108_has_produced"), ObjectPropertyType.Direct);
+		ObjectPropertyLink e7 = new ObjectPropertyLink(LinkIdFactory.getLinkId("e7", n2.getId(), n3.getId()),
+				new Label("http://erlangen-crm.org/current/P92_brought_into_existence"), ObjectPropertyType.Direct);
 		
 		gbtk.addLink(n1, n2, e1, 0.6);
 		gbtk.addLink(n1, n4, e2, 0.9);
@@ -246,13 +410,14 @@ public class GraphBuilderTopK extends GraphBuilder {
 		gbtk.addLink(n2, n3, e4, 0.7);
 		gbtk.addLink(n2, n4, e5, 0.4);
 		gbtk.addLink(n4, n3, e6, 0.3);
+		gbtk.addLink(n2, n3, e7, 0.5);
 		
 		
 		Set<Node> steinerNodes = new HashSet<Node>();
 		steinerNodes.add(n2);
 		steinerNodes.add(n3);
 		
-		List<DirectedWeightedMultigraph<Node, LabeledLink>> trees = gbtk.getTopKSteinerTrees(steinerNodes, 3);
+		List<DirectedWeightedMultigraph<Node, LabeledLink>> trees = gbtk.getTopKSteinerTrees(steinerNodes, 10, false);
 		for (DirectedWeightedMultigraph<Node, LabeledLink> tree : trees) {
 			System.out.println(GraphUtil.labeledGraphToString(tree));
 		}
